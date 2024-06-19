@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <avr/dtostrf.h>
+#include <pico/mutex.h>
 #include <ZeroAPRS.h>                       //https://github.com/hakkican/ZeroAPRS
 #if defined(ARDUINO_ARCH_SAMD)
 #include <ZeroSi4463.h>                     //https://github.com/hakkican/ZeroSi4463
@@ -26,6 +27,9 @@
 #include "hardware/i2c.h"
 #include "hardware/pwm.h"
 #endif
+
+uint32_t core1_counter = 0U;
+mutex_t core1_counter_mutex;
 
 #if defined(ARDUINO_ARCH_SAMD)
 
@@ -92,7 +96,9 @@ char    Symbol='O'; // 'O' for balloon, '>' for car, for more info : http://www.
 bool    alternateSymbolTable = false ; //false = '/' , true = '\'
 
 char    comment[50] = "LightAPRS-W 2.0";// Max 50 char
+mutex_t commentMutex;
 char    StatusMessage[50] = "LightAPRS-W 2.0 by TA2NHP & TA2MUN";
+mutex_t StatusMessageMutex;
 
 uint32_t GEOFENCE_APRS_frequency      = 144390000 ;//default frequency before geofencing. This variable will be updated based on GPS location.
 int32_t APRS_Freq_Correction          = -1200;     //Hz. vctcxo frequency correction for si4463
@@ -117,6 +123,10 @@ char hf_call[7] = "NOCALL";// DO NOT FORGET TO CHANGE YOUR CALLSIGN
 //#define WSPR_DEFAULT_FREQ       24926100UL //12M band
 //#define WSPR_DEFAULT_FREQ       28126100UL //10m band
 //for all bands -> http://wsprnet.org/drupal/node/7352
+
+#if defined(ARDUINO_ARCH_RP2040)
+bool core1_separate_stack = true;
+#endif
 
 
 // Supported modes, default HF mode is WSPR
@@ -660,6 +670,9 @@ void updateStatusLED(void)
 
 
 void setup() {
+  mutex_init(&core1_counter_mutex);
+  mutex_init(&commentMutex);
+  mutex_init(&StatusMessageMutex);
   Watchdog.enable(30000);
   Watchdog.reset();
   // While the energy rises slowly with the solar panel, 
@@ -743,7 +756,7 @@ void loop() {
   updateStatusLED();
 #endif
 
-if (((readBatt() > BattMin) && GpsFirstFix) || ((readBatt() > GpsMinVolt) && !GpsFirstFix)) {
+  if (((readBatt() > BattMin) && GpsFirstFix) || ((readBatt() > GpsMinVolt) && !GpsFirstFix)) {
 
     if (aliveStatus) {
 
@@ -754,6 +767,17 @@ if (((readBatt() > BattMin) && GpsFirstFix) || ((readBatt() > GpsMinVolt) && !Gp
         sleepSeconds(BattWait); 
       }   
     }
+
+      uint32_t mutex_owner_id;
+      bool hasMutex = mutex_try_enter(&core1_counter_mutex, &mutex_owner_id);
+      if (hasMutex) {
+          SerialUSB.println("");
+          SerialUSB.print("DEBUG DEBUG: Got from core1 value: ");
+          SerialUSB.println(core1_counter);
+          SerialUSB.println("");
+          SerialUSB.flush();
+          mutex_exit(&core1_counter_mutex);
+      }
     
       updateGpsData(1000);
       gpsDebug();
@@ -1046,7 +1070,9 @@ void updateTelemetry() {
   telemetry_buff[52] = 'S';
   telemetry_buff[53] = ' ';
 
-  sprintf(telemetry_buff + 54, "%s", comment);   
+  mutex_enter_blocking(&commentMutex);
+  sprintf(telemetry_buff + 54, "%s", comment);
+  mutex_exit(&commentMutex);
 
   // APRS PRECISION AND DATUM OPTION http://www.aprs.org/aprs12/datum.txt ; this extension should be added at end of beacon message.
   // We only send this detailed info if it's likely we're interested in, i.e. searching for landing position
@@ -1149,7 +1175,9 @@ void sendStatus() {
   {
 #endif
     delay(500);
+    mutex_enter_blocking(&StatusMessageMutex);
     APRS_sendStatus(StatusMessage);
+    mutex_exit(&StatusMessageMutex);
     delay(10);
 #if defined(ARDUINO_ARCH_SAMD)
     PttOFF;
@@ -1725,4 +1753,17 @@ void freeMem() {
   SerialUSB.print(F("Free RAM: ")); SerialUSB.print(freeMemory(), DEC); SerialUSB.println(F(" byte"));
 #endif
 
+}
+
+void setup1()
+{
+}
+
+
+void loop1()
+{
+  mutex_enter_blocking(&core1_counter_mutex);
+  core1_counter += 1;
+  mutex_exit(&core1_counter_mutex);
+  delay(1000);
 }
