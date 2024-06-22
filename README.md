@@ -58,5 +58,3 @@ Download and install [Arduino IDE](https://www.arduino.cc/en/Main/Software). If 
 #
 
 Robert Graf, K6RGG
-
-if you are insterested in, [here](https://www.instagram.com/kazuterasaki/) is my latest updates
