@@ -3,7 +3,7 @@
 // Core 0 runs radio module
 void setup()
 {
-  PicoBalloon.begin("K6RGG", 11);
+  PicoBalloon.begin("CALLSIGN", 11);
 }
 
 void loop()
