@@ -1,5 +1,6 @@
 #include <PicoBalloon.h>
 
+// Core 0
 void setup()
 {
   PicoBalloon.begin("K6RGG", 11);
@@ -10,6 +11,7 @@ void loop()
   PicoBalloon.loop();
 }
 
+// Core 1
 void setup1()
 {
   // Configure sensor...
@@ -17,7 +19,9 @@ void setup1()
 
 void loop1()
 {
-  // Read sensor value, then...
+  // Read sensor value...
+
+  // Update comment and status based on sensor data...
   PicoBalloon.setComment("comment goes here");
   PicoBalloon.setStatus("status goes here");
 
