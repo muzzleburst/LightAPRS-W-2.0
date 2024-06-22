@@ -534,8 +534,8 @@ namespace {
 
 #endif
 
-//#define DEVMODE // Development mode. Uncomment to enable for debugging.
-//#define DEVMODE2// Development mode. Uncomment to enable for debugging.
+#define DEVMODE // Development mode. Uncomment to enable for debugging.
+#define DEVMODE2// Development mode. Uncomment to enable for debugging.
 
 //******************************  APRS CONFIG **********************************
 char    CallSign[7]="NOCALL";//DO NOT FORGET TO CHANGE YOUR CALLSIGN
@@ -780,6 +780,80 @@ void sendStatus() {
     TxCount++;
   }
 
+}
+
+static void printStr(const char *str, int len)
+{
+#if defined(DEVMODE)
+  int slen = strlen(str);
+  for (int i = 0; i < len; ++i)
+    SerialUSB.print(i < slen ? str[i] : ' ');
+#endif
+}
+
+static void printFloat(float val, bool valid, int len, int prec)
+{
+#if defined(DEVMODE)
+  if (!valid)
+  {
+    while (len-- > 1)
+      SerialUSB.print('*');
+    SerialUSB.print(' ');
+  }
+  else
+  {
+    SerialUSB.print(val, prec);
+    int vi = abs((int)val);
+    int flen = prec + (val < 0.0 ? 2 : 1); // . and -
+    flen += vi >= 1000 ? 4 : vi >= 100 ? 3 : vi >= 10 ? 2 : 1;
+    for (int i = flen; i < len; ++i)
+      SerialUSB.print(' ');
+  }
+#endif
+}
+
+static void printInt(unsigned long val, bool valid, int len)
+{
+#if defined(DEVMODE)
+  char sz[32] = "*****************";
+  if (valid)
+    sprintf(sz, "%ld", val);
+  sz[len] = 0;
+  for (int i = strlen(sz); i < len; ++i)
+    sz[i] = ' ';
+  if (len > 0)
+    sz[len - 1] = ' ';
+  SerialUSB.print(sz);
+#endif
+}
+
+static void printDateTime(TinyGPSDate &d, TinyGPSTime &t)
+{
+#if defined(DEVMODE)
+  if (!d.isValid())
+  {
+    SerialUSB.print(F("********** "));
+  }
+  else
+  {
+    char sz[32];
+    sprintf(sz, "%02d/%02d/%02d ", d.month(), d.day(), d.year());
+    SerialUSB.print(sz);
+  }
+
+  if (!t.isValid())
+  {
+    SerialUSB.print(F("******** "));
+  }
+  else
+  {
+    char sz[32];
+    sprintf(sz, "%02d:%02d:%02d ", t.hour(), t.minute(), t.second());
+    SerialUSB.print(sz);
+  }
+
+  printInt(d.age(), d.isValid(), 5);
+#endif
 }
 
 
@@ -1448,80 +1522,6 @@ void setGPS_DynamicModel6()
     sendUBX(setdm6, sizeof(setdm6)/sizeof(uint8_t));
     gps_set_sucess=getUBX_ACK(setdm6);
   }
-}
-
-static void printFloat(float val, bool valid, int len, int prec)
-{
-#if defined(DEVMODE)
-  if (!valid)
-  {
-    while (len-- > 1)
-      SerialUSB.print('*');
-    SerialUSB.print(' ');
-  }
-  else
-  {
-    SerialUSB.print(val, prec);
-    int vi = abs((int)val);
-    int flen = prec + (val < 0.0 ? 2 : 1); // . and -
-    flen += vi >= 1000 ? 4 : vi >= 100 ? 3 : vi >= 10 ? 2 : 1;
-    for (int i = flen; i < len; ++i)
-      SerialUSB.print(' ');
-  }
-#endif
-}
-
-static void printInt(unsigned long val, bool valid, int len)
-{
-#if defined(DEVMODE)
-  char sz[32] = "*****************";
-  if (valid)
-    sprintf(sz, "%ld", val);
-  sz[len] = 0;
-  for (int i = strlen(sz); i < len; ++i)
-    sz[i] = ' ';
-  if (len > 0)
-    sz[len - 1] = ' ';
-  SerialUSB.print(sz);
-#endif
-}
-
-static void printDateTime(TinyGPSDate &d, TinyGPSTime &t)
-{
-#if defined(DEVMODE)
-  if (!d.isValid())
-  {
-    SerialUSB.print(F("********** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d/%02d/%02d ", d.month(), d.day(), d.year());
-    SerialUSB.print(sz);
-  }
-
-  if (!t.isValid())
-  {
-    SerialUSB.print(F("******** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d:%02d:%02d ", t.hour(), t.minute(), t.second());
-    SerialUSB.print(sz);
-  }
-
-  printInt(d.age(), d.isValid(), 5);
-#endif
-}
-
-static void printStr(const char *str, int len)
-{
-#if defined(DEVMODE)
-  int slen = strlen(str);
-  for (int i = 0; i < len; ++i)
-    SerialUSB.print(i < slen ? str[i] : ' ');
-#endif
 }
 
 } // Namespace
