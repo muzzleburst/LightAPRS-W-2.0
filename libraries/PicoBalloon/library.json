@@ -1,0 +1,22 @@
+{
+    "name": "PicoBalloon",
+    "version": "1.0.0",
+    "description": "Pico balloon library for RP2040, implementing APRS and WSPR.",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/muzzleburst/LightAPRS-W-2.0"
+    },
+    "authors": [
+      {
+        "name": "Robert Graf",
+        "email": "k6rgg@arrl.net",
+        "url": "https://github.com/muzzleburst",
+        "maintainer": true
+      }
+    ],
+    "license": "BSD-3-Clause",
+    "homepage": "https://github.com/hakkican/ZeroAPRS",
+    "frameworks": "*",
+    "platforms": "*"
+  }
+  
