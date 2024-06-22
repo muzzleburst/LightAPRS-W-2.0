@@ -1,6 +1,6 @@
 # PicoBalloon Arduino Library of AG6NS RP2040 Pico Balloon Tracker
 
-This fork refactors the AG6NS RP2040 Pico Balloon Tracker into an Arduino library.
+This fork refactors the [AG6NS RP2040 Pico Balloon Tracker](https://github.com/kaduhi/LightAPRS-W-2.0) into an Arduino library.
 
 ## How to compile & build the source code
 
