@@ -29,8 +29,9 @@
 #endif
 #include "PicoBalloon.h"
 
-#define DEVMODE // Development mode. Uncomment to enable for debugging.
+//#define DEVMODE // Development mode. Uncomment to enable for debugging.
 //#define DEVMODE2// Development mode. Uncomment to enable for debugging.
+//#define DEVMODE3// Development mode. gpsDebug. Uncomment to enable for debugging.
 
 
 #if defined(ARDUINO_ARCH_RP2040)
@@ -167,6 +168,8 @@ static uint32_t prev_ms_div = 0;
 static uint8_t s_regs[8];
 
 static uint8_t s_vfo_drive_strength[3];  // 0:2mA, 1:4mA, 2:6mA, 3:8mA
+
+#define SerialUSB   Serial
 
 void freeMem() {
 #if defined(DEVMODE)
@@ -506,8 +509,6 @@ namespace {
 #define TcxoOFF     digitalWrite(TCXO_Pwr, LOW)
 
 #elif defined(ARDUINO_ARCH_RP2040)
-
-#define SerialUSB   Serial
 
 #define Si5351Pwr     4
 #define BattPin       A3
@@ -1782,9 +1783,6 @@ void PicoBalloon_::loop()
   } else {
     sleepSeconds(BattWait);
   }
-
-  updateTelemetry();
-  sendLocation();
 }
 
 PicoBalloon_ &PicoBalloon_::getInstance()
