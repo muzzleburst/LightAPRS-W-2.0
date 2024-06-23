@@ -1,9 +1,14 @@
+#include <CPU.h>
 #include <PicoBalloon.h>
+#include <string>
+
+// Create an instance of the CPU temperature sensor
+CPU cpu;
 
 // Core 0 runs radio module
 void setup()
 {
-  PicoBalloon.begin("CALLSIGN", 11);
+  PicoBalloon.begin("K6RGG", 11);
 }
 
 void loop()
@@ -19,11 +24,9 @@ void setup1()
 
 void loop1()
 {
-  // Read sensor value...
-
-  // Update comment and status based on sensor data...
-  PicoBalloon.setComment("comment goes here");
-  PicoBalloon.setStatus("status goes here");
+  // Set comment.
+  int temperature = cpu.getTemperature();
+  PicoBalloon.setComment(std::string{"SF-HAB.org Pico Balloon CPU Temp: "} + std::to_string(temperature) + "C");
 
   delay(1000);
 }

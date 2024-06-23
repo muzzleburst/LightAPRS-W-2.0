@@ -29,6 +29,9 @@
 #endif
 #include "PicoBalloon.h"
 
+#define DEVMODE // Development mode. Uncomment to enable for debugging.
+//#define DEVMODE2// Development mode. Uncomment to enable for debugging.
+
 
 #if defined(ARDUINO_ARCH_RP2040)
 
@@ -534,9 +537,6 @@ namespace {
 
 #endif
 
-#define DEVMODE // Development mode. Uncomment to enable for debugging.
-#define DEVMODE2// Development mode. Uncomment to enable for debugging.
-
 //******************************  APRS CONFIG **********************************
 char    CallSign[7]="NOCALL";//DO NOT FORGET TO CHANGE YOUR CALLSIGN
 int8_t  CallNumber=11; //11; //SSID http://www.aprs.org/aprs11/SSIDs.txt
@@ -912,7 +912,7 @@ static void updateGpsData(int ms)
 }
 
 void gpsDebug() {
-#if defined(DEVMODE)
+#if defined(DEVMODE3)
   SerialUSB.println();
   SerialUSB.println(F("Sats HDOP Latitude   Longitude   Fix  Date       Time     Date Alt    Course Speed Card Chars Sentences Checksum"));
   SerialUSB.println(F("          (deg)      (deg)       Age                      Age  (m)    --- from GPS ----  RX    RX        Fail"));
@@ -1063,9 +1063,9 @@ void configureFreqbyLocation() {
 
 
   if(beaconViaARISS && inARISSGeoFence(tempLat, tempLong)) {
-    APRS_setPath1("ARISS", Wide1);
-    APRS_setPath2("WIDE2", Wide2);
-    APRS_setPathSize(2);
+    //APRS_setPath1("ARISS", Wide1);
+    //APRS_setPath2("WIDE2", Wide2);
+    APRS_setPathSize(1);
     GEOFENCE_APRS_frequency=145825000;
     arissModEnabled = true;
   } else {
@@ -1615,12 +1615,12 @@ void PicoBalloon_::begin(const std::string& callSign, uint8_t callNumber)
   APRS_init();
   APRS_setCallsign(CallSign, CallNumber);
   APRS_setDestination("APLIGA", 0);
-  APRS_setPath1("WIDE1", Wide1);
-  APRS_setPath2("WIDE2", Wide2);
-  APRS_setPathSize(2);
+  //APRS_setPath1("WIDE1", Wide1);
+  //APRS_setPath2("WIDE2", Wide2);
+  APRS_setPathSize(1);
   APRS_useAlternateSymbolTable(alternateSymbolTable);
   APRS_setSymbol(Symbol);
-  APRS_setPathSize(pathSize);
+  APRS_setPathSize(1);
 
 #if defined(ARDUINO_ARCH_SAMD)
   Wire.begin();
@@ -1708,7 +1708,7 @@ void PicoBalloon_::loop()
               APRS_setPathSize(1);
             } else {
               //use default settings  
-              APRS_setPathSize(pathSize);
+              APRS_setPathSize(1);
             }
 
             //in some countries Airborne APRS is not allowed. (for pico balloon only)
@@ -1782,6 +1782,9 @@ void PicoBalloon_::loop()
   } else {
     sleepSeconds(BattWait);
   }
+
+  updateTelemetry();
+  sendLocation();
 }
 
 PicoBalloon_ &PicoBalloon_::getInstance()
