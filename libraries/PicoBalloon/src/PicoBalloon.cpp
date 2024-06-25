@@ -527,6 +527,7 @@ namespace {
   do {                          \
     digitalWrite(GpsPwr, HIGH); \
     Serial2.end();              \
+    gps.date.clear();           \
     /*printf("GpsOFF\n");*/     \
   } while (false)
 #define PttON       
@@ -554,11 +555,19 @@ int32_t APRS_Freq_Correction          = -1200;     //Hz. vctcxo frequency correc
 //*****************************************************************************
 
 uint16_t  BeaconWait=50;  //seconds sleep for next beacon (HF or VHF). This is an optimized value, do not change this if possible.
+#if defined(ARDUINO_ARCH_SAMD)
 uint16_t  BattWait=60;    //seconds sleep if super capacitors/batteries are below BattMin (important if power source is solar panel) 
 float     BattMin=3.3;    // min Volts to wake up.
 float     GpsMinVolt=4.5; //min Volts for GPS to wake up. (important if power source is solar panel) 
 float     WsprBattMin=4.0;//min Volts for HF (WSPR) radio module to transmit (TX) ~10 mW
 float     HighVolt=6.0; //GPS is always on if the voltage exceeds this value to protect solar caps from overcharge
+#elif defined(ARDUINO_ARCH_RP2040)
+uint16_t  BattWait=1;    //seconds sleep if super capacitors/batteries are below BattMin (important if power source is solar panel) 
+float     BattMin=0.0;    // min Volts to wake up.
+float     GpsMinVolt=0.0; //min Volts for GPS to wake up. (important if power source is solar panel) 
+float     WsprBattMin=0.0;//min Volts for HF (WSPR) radio module to transmit (TX) ~10 mW
+float     HighVolt=9.9; //GPS is always on if the voltage exceeds this value to protect solar caps from overcharge
+#endif
 
 //******************************  HF (WSPR) CONFIG *************************************
 
@@ -694,7 +703,14 @@ float readBatt() {
   } while (value > 20.0);
   return value ;
 #elif defined(ARDUINO_ARCH_RP2040)
-  return 5.0f;
+  int adc_val = 0;
+  adc_val = analogRead(BattPin);
+  adc_val += analogRead(BattPin);
+  adc_val += analogRead(BattPin);
+  float solar_voltage = ((float)adc_val / 3.0f - 27.0f) / 412.0f;
+  // if (solar_voltage < 0.0f) solar_voltage = 0.0f;
+  // if (solar_voltage > 9.9f) solar_voltage = 9.9f;
+  return solar_voltage;
 #endif
 }
 
@@ -906,9 +922,6 @@ static void updateGpsData(int ms)
     #if defined(DEVMODE2)
     printf("setTime(%02u:%02u:%02u)\n", gps.time.hour(), gps.time.minute(), gps.time.second());
     #endif
-    #if defined(ARDUINO_ARCH_RP2040)
-    setStatusLEDBlinkCount(LED_STATUS_GPS_TIME);
-    #endif
   }
 }
 
@@ -1028,6 +1041,11 @@ void updateTelemetry() {
   mutex_enter_blocking(&commentMutex);
   sprintf(telemetry_buff + 54, "%s", comment);
   mutex_exit(&commentMutex);
+
+  #if defined(ARDUINO_ARCH_RP2040)
+  // remove temperature and pressure info
+  memmove(&telemetry_buff[24], &telemetry_buff[43], (sizeof(telemetry_buff) - 43));
+  #endif
 
   // APRS PRECISION AND DATUM OPTION http://www.aprs.org/aprs12/datum.txt ; this extension should be added at end of beacon message.
   // We only send this detailed info if it's likely we're interested in, i.e. searching for landing position
@@ -1674,7 +1692,7 @@ void PicoBalloon_::loop()
       }else{
         GpsInvalidTime++;
         #if defined(ARDUINO_ARCH_RP2040)
-        if (gps.time.isValid()) setStatusLEDBlinkCount(LED_STATUS_GPS_TIME);
+        if (gps.date.year() != 2000) setStatusLEDBlinkCount(LED_STATUS_GPS_TIME);
         else setStatusLEDBlinkCount(LED_STATUS_NO_GPS);
         #endif
         if(GpsInvalidTime > GpsResetTime){
@@ -1719,7 +1737,7 @@ void PicoBalloon_::loop()
               #endif
               sendLocation();             
               #if defined(ARDUINO_ARCH_RP2040)
-              setStatusLEDBlinkCount(LED_STATUS_GPS_TIME);
+              setStatusLEDBlinkCount(LED_STATUS_NO_GPS);
               #endif
 
             }
@@ -1766,7 +1784,7 @@ void PicoBalloon_::loop()
             SerialUSB.println(F("Digital HF Mode Sent"));
             #endif             
             #if defined(ARDUINO_ARCH_RP2040)
-            setStatusLEDBlinkCount(LED_STATUS_GPS_TIME);
+            setStatusLEDBlinkCount(LED_STATUS_NO_GPS);
             #endif
   
           } else {

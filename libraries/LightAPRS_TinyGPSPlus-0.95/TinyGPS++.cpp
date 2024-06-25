@@ -409,6 +409,14 @@ uint8_t TinyGPSDate::day()
    return date / 10000;
 }
 
+#if defined(ARDUINO_ARCH_RP2040)
+void TinyGPSDate::clear()
+{
+   valid = updated = false;
+   date = 0;
+}
+#endif
+
 uint8_t TinyGPSTime::hour()
 {
    updated = false;

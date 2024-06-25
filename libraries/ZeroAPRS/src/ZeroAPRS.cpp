@@ -311,7 +311,9 @@ void APRS_sinus()
   extern uint8_t aprs_si5351_clk_port;
   extern uint32_t GEOFENCE_APRS_frequency;
   // sinusTable[n] is between 1 and 254, - 128 = -127 and 126
-  vfo_set_freq_x16(aprs_si5351_clk_port, ((GEOFENCE_APRS_frequency + ((int32_t)pgm_read_byte(&(sinusTable[sinusPtr])) - 128L) * gain * 4) << PLL_CALCULATION_PRECISION));
+  // deviation: 126.5 x gain (1 ~ 4) x 8 = 1.012kHz ~ 4.048kHz
+  // deviation: 126.5 x gain (1 ~ 4) x 10 = 1.265kHz ~ 5.060kHz
+  vfo_set_freq_x16(aprs_si5351_clk_port, ((GEOFENCE_APRS_frequency + ((int32_t)pgm_read_byte(&(sinusTable[sinusPtr])) - 128L) * gain * 10) << PLL_CALCULATION_PRECISION));
 #endif
   countPtr++;
 }

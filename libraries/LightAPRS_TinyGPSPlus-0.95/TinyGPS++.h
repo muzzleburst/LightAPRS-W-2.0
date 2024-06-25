@@ -86,6 +86,9 @@ public:
    uint16_t year();
    uint8_t month();
    uint8_t day();
+   #if defined(ARDUINO_ARCH_RP2040)
+   void clear();
+   #endif
 
    TinyGPSDate() : valid(false), updated(false), date(0)
    {}
